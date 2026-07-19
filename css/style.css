@@ -498,6 +498,18 @@ input { font-family: inherit; }
   cursor: pointer;
   transition: all var(--transition);
 }
+.toggle-btn.btn-none {
+  flex: 0 0 58px;
+  border-style: dashed;
+  color: var(--text-faint);
+}
+.toggle-btn.btn-none.active {
+  background: var(--surface-hover);
+  color: var(--text-muted);
+  border-color: var(--text-faint);
+  border-style: solid;
+  font-weight: 600;
+}
 .toggle-btn:hover { border-color: var(--text-faint); }
 .toggle-btn.active[data-value="success"],
 .toggle-btn.active[data-value="normal"],

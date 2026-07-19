@@ -543,22 +543,22 @@ function openDrawer(dstr) {
   buildBrainrotInputs(rec.brainrot);
 
   // IF
-  setupToggle("if", rec.intermittentFasting ? (rec.intermittentFasting.success ? "success" : "fail") : "success");
+  setupToggle("if", rec.intermittentFasting == null ? "none" : (rec.intermittentFasting.success ? "success" : "fail"));
   document.getElementById("ifNote").value = rec.intermittentFasting?.note ?? "";
   onToggleChange("if");
 
   // insomnia
-  setupToggle("insomnia", rec.insomnia ? (rec.insomnia.normal ? "normal" : "insomnia") : "normal");
+  setupToggle("insomnia", rec.insomnia == null ? "none" : (rec.insomnia.normal ? "normal" : "insomnia"));
   document.getElementById("insomniaNote").value = rec.insomnia?.note ?? "";
   onToggleChange("insomnia");
 
   // jog
-  setupToggle("jog", rec.jogging ? (rec.jogging.active ? "yes" : "no") : "yes");
+  setupToggle("jog", rec.jogging == null ? "none" : (rec.jogging.active ? "yes" : "no"));
   document.getElementById("jogNote").value = rec.jogging?.note ?? "";
   onToggleChange("jog");
 
   // trisandhya
-  setupToggle("tri", rec.trisandhya === false ? "no" : "yes");
+  setupToggle("tri", rec.trisandhya === true ? "yes" : (rec.trisandhya === false ? "no" : "none"));
 
   // AC
   document.getElementById("acInput").value = rec.acLog?.value ?? "";
@@ -599,19 +599,19 @@ document.getElementById("drawerSave").addEventListener("click", async () => {
     sesi,
     sesiColors: currentSesiColors,
     brainrot,
-    intermittentFasting: {
+    intermittentFasting: drawerToggles.if === "none" ? null : {
       success: drawerToggles.if === "success",
       note: drawerToggles.if === "fail" ? document.getElementById("ifNote").value.trim() : "",
     },
-    insomnia: {
+    insomnia: drawerToggles.insomnia === "none" ? null : {
       normal: drawerToggles.insomnia === "normal",
       note: drawerToggles.insomnia === "insomnia" ? document.getElementById("insomniaNote").value.trim() : "",
     },
-    jogging: {
+    jogging: drawerToggles.jog === "none" ? null : {
       active: drawerToggles.jog === "yes",
       note: drawerToggles.jog === "no" ? document.getElementById("jogNote").value.trim() : "",
     },
-    trisandhya: drawerToggles.tri === "yes",
+    trisandhya: drawerToggles.tri === "none" ? null : (drawerToggles.tri === "yes"),
     acLog: {
       value: acUnknown ? null : (acVal === "" ? null : Number(acVal)),
       unknown: acUnknown,
