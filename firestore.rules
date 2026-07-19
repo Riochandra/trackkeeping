@@ -1,0 +1,16 @@
+rules_version = '2';
+
+// Contoh aturan sederhana untuk penggunaan personal (single-user, no auth).
+// Ini TIDAK memblokir siapapun yang tahu Project ID + API key kamu (yang mana
+// terekspos di client-side code, seperti biasa untuk Firebase web app).
+// Untuk personal tracker ini cukup, tapi kalau mau lebih aman lihat opsi
+// "passphrase gate" di README.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /trackkeeping_days/{docId} {
+      // hanya izinkan dokumen dengan ID berformat tanggal YYYY-MM-DD
+      allow read: if true;
+      allow write: if docId.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}');
+    }
+  }
+}

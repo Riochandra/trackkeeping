@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>TRACKKEEPING</title>
+<meta name="description" content="Daily grinding & habit log" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B0D10'/%3E%3Cpath d='M16 5 L27 16 L16 27 L5 16 Z' fill='%23C9A84C'/%3E%3C/svg%3E" />
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <div id="app">
+
+    <!-- ============ HEADER ============ -->
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">◆</span>
+        <span class="brand-name">TRACKKEEPING</span>
+      </div>
+
+      <div class="date-nav">
+        <button id="prevMonth" class="nav-btn" aria-label="Bulan sebelumnya">‹</button>
+        <button id="monthLabel" class="month-label" aria-haspopup="true" aria-expanded="false">
+          <span id="monthText">Juli</span> <span id="yearText">2026</span>
+        </button>
+        <button id="nextMonth" class="nav-btn" aria-label="Bulan berikutnya">›</button>
+        <button id="todayBtn" class="today-btn">Hari ini</button>
+      </div>
+
+      <div class="header-actions">
+        <button id="themeToggle" class="icon-btn" aria-label="Ganti tema" title="Ganti tema">
+          <svg id="iconSun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          <svg id="iconMoon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ============ MONTH / YEAR PICKER POPOVER ============ -->
+    <div id="pickerPopover" class="picker-popover hidden">
+      <div class="picker-years">
+        <button id="pickerPrevYear" class="nav-btn small">‹</button>
+        <span id="pickerYearLabel">2026</span>
+        <button id="pickerNextYear" class="nav-btn small">›</button>
+      </div>
+      <div id="pickerMonths" class="picker-months"></div>
+    </div>
+
+    <!-- ============ TICKER (SIGNATURE ELEMENT) ============ -->
+    <div class="ticker" id="ticker">
+      <div class="ticker-item"><span class="ticker-label">TOTAL</span><span class="ticker-value" id="tkTotal">0.00j</span></div>
+      <span class="ticker-dot">·</span>
+      <div class="ticker-item"><span class="ticker-label">IF</span><span class="ticker-value" id="tkIF">0/0</span></div>
+      <span class="ticker-dot">·</span>
+      <div class="ticker-item"><span class="ticker-label">INSOMNIA</span><span class="ticker-value" id="tkInsomnia">0</span></div>
+      <span class="ticker-dot">·</span>
+      <div class="ticker-item"><span class="ticker-label">NO-JOG</span><span class="ticker-value" id="tkNoJog">0</span></div>
+      <span class="ticker-dot">·</span>
+      <div class="ticker-item"><span class="ticker-label">TRISANDHYA</span><span class="ticker-value" id="tkTri">0/0</span></div>
+      <span class="ticker-dot">·</span>
+      <div class="ticker-item"><span class="ticker-label">AC</span><span class="ticker-value" id="tkAC">0.0j</span></div>
+    </div>
+
+    <!-- ============ MAIN GRID (desktop table) ============ -->
+    <main class="grid-wrap">
+      <div class="table-scroll" id="tableScroll">
+        <table class="grid-table" id="gridTable">
+          <thead>
+            <tr>
+              <th class="col-tgl sticky-col">Tgl</th>
+              <th class="col-total sticky-col2">Total</th>
+              <th class="col-sesi">S1</th>
+              <th class="col-sesi">S2</th>
+              <th class="col-sesi">S3</th>
+              <th class="col-sesi">S4</th>
+              <th class="col-sesi">S5</th>
+              <th class="col-sesi">S6</th>
+              <th class="col-sesi">S7</th>
+              <th class="col-sesi">S8</th>
+              <th class="col-sesi">S9</th>
+              <th class="col-wide">Brainrot</th>
+              <th class="col-wide">IF</th>
+              <th class="col-wide">Insomnia</th>
+              <th class="col-wide">No Jog</th>
+              <th class="col-narrow">Trisandhya</th>
+              <th class="col-narrow">AC</th>
+            </tr>
+          </thead>
+          <tbody id="gridBody">
+            <!-- rows injected by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile card list (shown <640px) -->
+      <div class="card-list" id="cardList"></div>
+
+      <div class="empty-state hidden" id="emptyState">
+        <p>Belum ada data untuk bulan ini.</p>
+        <p class="empty-sub">Klik salah satu tanggal untuk mulai isi.</p>
+      </div>
+    </main>
+
+    <!-- ============ LOADING SKELETON ============ -->
+    <div class="loading-bar hidden" id="loadingBar"></div>
+
+  </div>
+
+  <!-- ============ DAY EDITOR DRAWER ============ -->
+  <div id="drawerOverlay" class="drawer-overlay hidden"></div>
+  <aside id="drawer" class="drawer hidden" aria-hidden="true">
+    <div class="drawer-head">
+      <div>
+        <div class="drawer-date" id="drawerDate">1 Juli 2026</div>
+        <div class="drawer-day" id="drawerDay">Rabu</div>
+      </div>
+      <button id="drawerClose" class="icon-btn" aria-label="Tutup">✕</button>
+    </div>
+
+    <div class="drawer-body" id="drawerBody">
+
+      <section class="field-group">
+        <label class="field-label">Sesi Grinding <span class="field-hint" id="drawerTotal">Total: 0.00 jam</span></label>
+        <div class="sesi-grid" id="sesiGrid"><!-- 9 inputs injected --></div>
+      </section>
+
+      <section class="field-group">
+        <label class="field-label">Brainrot <span class="field-hint" id="drawerBrainrotTotal">Total: 0.00 jam</span></label>
+        <div class="sesi-grid" id="brainrotGrid"><!-- injected by JS --></div>
+        <button type="button" id="brainrotAddBtn" class="btn-add">+ Tambah sesi</button>
+      </section>
+
+      <section class="field-group">
+        <label class="field-label">Intermittent Fasting</label>
+        <div class="toggle-row" data-toggle="if">
+          <button class="toggle-btn" data-value="success">Berhasil ≥16j</button>
+          <button class="toggle-btn" data-value="fail">Gagal</button>
+        </div>
+        <input type="text" id="ifNote" class="field-input hidden" placeholder='cth. "NO IF; 14hr"' />
+      </section>
+
+      <section class="field-group">
+        <label class="field-label">Insomnia</label>
+        <div class="toggle-row" data-toggle="insomnia">
+          <button class="toggle-btn" data-value="normal">Normal &lt;01.30</button>
+          <button class="toggle-btn" data-value="insomnia">Insomnia</button>
+        </div>
+        <input type="text" id="insomniaNote" class="field-input hidden" placeholder="cth. jam tidur / alasan" />
+      </section>
+
+      <section class="field-group">
+        <label class="field-label">Jogging</label>
+        <div class="toggle-row" data-toggle="jog">
+          <button class="toggle-btn" data-value="yes">Jogging</button>
+          <button class="toggle-btn" data-value="no">Tidak</button>
+        </div>
+        <input type="text" id="jogNote" class="field-input hidden" placeholder="alasan tidak jogging" />
+      </section>
+
+      <section class="field-group">
+        <label class="field-label">Trisandhya</label>
+        <div class="toggle-row" data-toggle="tri">
+          <button class="toggle-btn" data-value="yes">Ya</button>
+          <button class="toggle-btn" data-value="no">Tidak</button>
+        </div>
+      </section>
+
+      <section class="field-group">
+        <label class="field-label" for="acInput">AC Log (jam)</label>
+        <div class="ac-row">
+          <input type="number" step="0.01" min="0" id="acInput" class="field-input mono" placeholder="0.00" />
+          <label class="checkbox-row">
+            <input type="checkbox" id="acUnknown" />
+            <span>Unknown / unrecorded</span>
+          </label>
+        </div>
+      </section>
+
+    </div>
+
+    <div class="drawer-foot">
+      <button id="drawerDelete" class="btn-ghost">Hapus data hari ini</button>
+      <button id="drawerSave" class="btn-primary">Simpan</button>
+    </div>
+  </aside>
+
+  <!-- ============ TOAST ============ -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Firebase (modular SDK via CDN, only firestore — no auth/analytics loaded) -->
+  <script type="module" src="js/firebase-config.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
