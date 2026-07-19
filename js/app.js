@@ -54,6 +54,20 @@ function sumSesi(rec) { return sumArr(rec?.sesi); }
 function sumBrainrot(rec) { return sumArr(rec?.brainrot); }
 function fmtHours(n) { return (Math.round(n * 100) / 100).toFixed(2); }
 
+/* ---- AC log: 12-hour start/finish -> duration in hours ---- */
+function timeToMinutes(hour12, minute, period) {
+  let h = Number(hour12) % 12;
+  if (period === "PM") h += 12;
+  return h * 60 + Number(minute);
+}
+function acDurationHours(start, finish) {
+  const startMin = timeToMinutes(start.h, start.m, start.p);
+  const finishMin = timeToMinutes(finish.h, finish.m, finish.p);
+  let diff = finishMin - startMin;
+  if (diff < 0) diff += 24 * 60; // crosses midnight
+  return diff / 60;
+}
+
 function showToast(msg, isError = false) {
   const t = document.getElementById("toast");
   t.textContent = msg;
@@ -388,6 +402,57 @@ function buildSesiInputs() {
 }
 buildSesiInputs();
 
+/* ---- AC log time selects ---- */
+function fillSelect(el, options) {
+  el.innerHTML = options.map(o => `<option value="${o.value}">${o.label}</option>`).join("");
+}
+function buildACSelects() {
+  const hourOpts = Array.from({length: 12}, (_, i) => { const h = i + 1; return { value: h, label: h }; });
+  const minuteOpts = Array.from({length: 60}, (_, i) => { const m = pad2(i); return { value: m, label: m }; });
+  const periodOpts = [{ value: "AM", label: "AM" }, { value: "PM", label: "PM" }];
+
+  ["acStartHour", "acEndHour"].forEach(id => fillSelect(document.getElementById(id), hourOpts));
+  ["acStartMinute", "acEndMinute"].forEach(id => fillSelect(document.getElementById(id), minuteOpts));
+  ["acStartPeriod", "acEndPeriod"].forEach(id => fillSelect(document.getElementById(id), periodOpts));
+
+  document.querySelectorAll("#acTimeGrid select").forEach(sel => sel.addEventListener("change", updateACHint));
+}
+buildACSelects();
+
+function getACStart() {
+  return {
+    h: document.getElementById("acStartHour").value,
+    m: document.getElementById("acStartMinute").value,
+    p: document.getElementById("acStartPeriod").value,
+  };
+}
+function getACFinish() {
+  return {
+    h: document.getElementById("acEndHour").value,
+    m: document.getElementById("acEndMinute").value,
+    p: document.getElementById("acEndPeriod").value,
+  };
+}
+function setACSelects(prefix, t) {
+  document.getElementById(`${prefix}Hour`).value = String(t.h);
+  document.getElementById(`${prefix}Minute`).value = pad2(t.m);
+  document.getElementById(`${prefix}Period`).value = t.p;
+}
+function updateACHint() {
+  const unknown = document.getElementById("acUnknown").checked;
+  const hint = document.getElementById("acHint");
+  if (unknown) { hint.textContent = "Unknown"; return; }
+  const hours = acDurationHours(getACStart(), getACFinish());
+  hint.textContent = `${fmtHours(hours)} jam`;
+}
+function setACDisabled(disabled) {
+  document.querySelectorAll("#acTimeGrid select").forEach(sel => sel.disabled = disabled);
+}
+document.getElementById("acUnknown").addEventListener("change", (e) => {
+  setACDisabled(e.target.checked);
+  updateACHint();
+});
+
 function applySesiColorDots() {
   document.querySelectorAll("#sesiGrid .color-dot").forEach((dot, i) => {
     const c = currentSesiColors[i];
@@ -561,9 +626,12 @@ function openDrawer(dstr) {
   setupToggle("tri", rec.trisandhya === true ? "yes" : (rec.trisandhya === false ? "no" : "none"));
 
   // AC
-  document.getElementById("acInput").value = rec.acLog?.value ?? "";
-  document.getElementById("acUnknown").checked = !!rec.acLog?.unknown;
-  document.getElementById("acInput").disabled = !!rec.acLog?.unknown;
+  const acRec = rec.acLog;
+  setACSelects("acStart", acRec?.start || { h: 12, m: "00", p: "AM" });
+  setACSelects("acEnd", acRec?.finish || { h: 12, m: "00", p: "AM" });
+  document.getElementById("acUnknown").checked = !!acRec?.unknown;
+  setACDisabled(!!acRec?.unknown);
+  updateACHint();
 
   drawer.classList.remove("hidden");
   drawerOverlay.classList.remove("hidden");
@@ -582,18 +650,15 @@ document.getElementById("drawerClose").addEventListener("click", closeDrawer);
 drawerOverlay.addEventListener("click", closeDrawer);
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDrawer(); });
 
-document.getElementById("acUnknown").addEventListener("change", (e) => {
-  document.getElementById("acInput").disabled = e.target.checked;
-});
-
 /* ---- save / delete ---- */
 document.getElementById("drawerSave").addEventListener("click", async () => {
   if (!state.selectedDate) return;
 
   const sesi = Array.from(document.querySelectorAll("#sesiGrid input")).map(i => i.value === "" ? null : Number(i.value));
   const brainrot = Array.from(document.querySelectorAll("#brainrotGrid input")).map(i => i.value === "" ? null : Number(i.value));
-  const acVal = document.getElementById("acInput").value;
   const acUnknown = document.getElementById("acUnknown").checked;
+  const acStart = getACStart();
+  const acFinish = getACFinish();
 
   const record = {
     sesi,
@@ -613,7 +678,9 @@ document.getElementById("drawerSave").addEventListener("click", async () => {
     },
     trisandhya: drawerToggles.tri === "none" ? null : (drawerToggles.tri === "yes"),
     acLog: {
-      value: acUnknown ? null : (acVal === "" ? null : Number(acVal)),
+      start: acStart,
+      finish: acFinish,
+      value: acUnknown ? null : Math.round(acDurationHours(acStart, acFinish) * 100) / 100,
       unknown: acUnknown,
     },
     updatedAt: new Date().toISOString(),
