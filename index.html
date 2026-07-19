@@ -4,13 +4,35 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>TRACKKEEPING</title>
-<meta name="description" content="Grinding Log" />
+<meta name="description" content="Daily grinding & habit log" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B0D10'/%3E%3Cpath d='M16 5 L27 16 L16 27 L5 16 Z' fill='%23C9A84C'/%3E%3C/svg%3E" />
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+
+<!-- App CSS first so the dark theme paints immediately (no white flash) -->
+<link rel="stylesheet" href="css/style.css" />
+
+<!-- Warm up every other origin we need in parallel with HTML parsing,
+     instead of the browser discovering them one-by-one later -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css" />
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+
+<!-- Fonts: load async (display=swap already set) so they never block first paint -->
+<link rel="preload" as="style"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'">
+<noscript>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+</noscript>
+
+<!-- Module preloads: fetch app.js/firebase-config.js and their nested
+     Firebase SDK imports in parallel, instead of the sequential
+     fetch -> parse -> discover -> fetch waterfall this used to be -->
+<link rel="modulepreload" href="js/firebase-config.js">
+<link rel="modulepreload" href="js/app.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js" crossorigin>
 </head>
 <body>
 
@@ -58,7 +80,7 @@
       <span class="ticker-dot">·</span>
       <div class="ticker-item"><span class="ticker-label">INSOMNIA</span><span class="ticker-value" id="tkInsomnia">0</span></div>
       <span class="ticker-dot">·</span>
-      <div class="ticker-item"><span class="ticker-label">JOGGING</span><span class="ticker-value" id="tkNoJog">0</span></div>
+      <div class="ticker-item"><span class="ticker-label">NO-JOG</span><span class="ticker-value" id="tkNoJog">0</span></div>
       <span class="ticker-dot">·</span>
       <div class="ticker-item"><span class="ticker-label">TRISANDHYA</span><span class="ticker-value" id="tkTri">0/0</span></div>
       <span class="ticker-dot">·</span>
@@ -85,7 +107,7 @@
               <th class="col-wide">Brainrot</th>
               <th class="col-wide">IF</th>
               <th class="col-wide">Insomnia</th>
-              <th class="col-wide">Jogging</th>
+              <th class="col-wide">No Jog</th>
               <th class="col-narrow">Trisandhya</th>
               <th class="col-narrow">AC</th>
             </tr>
@@ -209,7 +231,7 @@
           </div>
           <label class="checkbox-row">
             <input type="checkbox" id="acUnknown" />
-            <span>Unrecorded</span>
+            <span>Unknown / unrecorded</span>
           </label>
         </div>
       </section>

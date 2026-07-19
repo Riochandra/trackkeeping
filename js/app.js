@@ -686,12 +686,26 @@ document.getElementById("drawerSave").addEventListener("click", async () => {
     updatedAt: new Date().toISOString(),
   };
 
+  // Optimistic UI: the old code awaited setDoc() before giving ANY feedback,
+  // so the whole 1-2s round trip (Jakarta <-> Firestore server) sat between
+  // the click and the toast/drawer closing. Firestore already applies local
+  // writes to its cache instantly and reconciles via onSnapshot in the
+  // background — so update local state + UI right away, and only revert if
+  // the write actually fails (offline, blocked by rules, etc).
+  const dateId = state.selectedDate;
+  const prevRec = state.data.get(dateId);
+
+  state.data.set(dateId, record);
+  renderGrid();
+  showToast("Tersimpan");
+  closeDrawer();
+
   try {
-    await setDoc(doc(db, COLLECTION, state.selectedDate), record, { merge: false });
-    showToast("Tersimpan");
-    closeDrawer();
+    await setDoc(doc(db, COLLECTION, dateId), record, { merge: false });
   } catch (err) {
     console.error(err);
+    if (prevRec) state.data.set(dateId, prevRec); else state.data.delete(dateId);
+    renderGrid();
     showToast("Gagal menyimpan — cek koneksi/config Firebase", true);
   }
 });
@@ -699,12 +713,21 @@ document.getElementById("drawerSave").addEventListener("click", async () => {
 document.getElementById("drawerDelete").addEventListener("click", async () => {
   if (!state.selectedDate) return;
   if (!confirm("Hapus semua data untuk tanggal ini?")) return;
+
+  const dateId = state.selectedDate;
+  const prevRec = state.data.get(dateId);
+
+  state.data.delete(dateId);
+  renderGrid();
+  showToast("Data dihapus");
+  closeDrawer();
+
   try {
-    await deleteDoc(doc(db, COLLECTION, state.selectedDate));
-    showToast("Data dihapus");
-    closeDrawer();
+    await deleteDoc(doc(db, COLLECTION, dateId));
   } catch (err) {
     console.error(err);
+    if (prevRec) state.data.set(dateId, prevRec);
+    renderGrid();
     showToast("Gagal menghapus", true);
   }
 });
