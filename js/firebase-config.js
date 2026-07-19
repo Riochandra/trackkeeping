@@ -23,3 +23,4 @@ export const db = getFirestore(app);
 
 // Name of the Firestore collection used for daily records.
 export const COLLECTION = "trackkeeping_days";
+export const NOTES_COLLECTION = "trackkeeping_notes";
