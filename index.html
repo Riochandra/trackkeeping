@@ -105,6 +105,22 @@
       </div>
     </main>
 
+    <!-- ============ EXTRA NOTES ============ -->
+    <section class="notes-wrap">
+      <div class="notes-head">
+        <h2 class="notes-title">Extra Notes</h2>
+        <button type="button" id="notesAddBtn" class="btn-add">+ Tambah baris</button>
+      </div>
+      <div class="notes-table" id="notesTable">
+        <div class="notes-row notes-row-head">
+          <span>Tgl</span>
+          <span>What is it?</span>
+          <span></span>
+        </div>
+        <!-- rows injected by JS -->
+      </div>
+    </section>
+
     <!-- ============ LOADING SKELETON ============ -->
     <div class="loading-bar hidden" id="loadingBar"></div>
 
@@ -187,6 +203,9 @@
       <button id="drawerSave" class="btn-primary">Simpan</button>
     </div>
   </aside>
+
+  <!-- ============ SESI COLOR-LABEL POPOVER ============ -->
+  <div id="colorPopover" class="color-popover hidden"></div>
 
   <!-- ============ TOAST ============ -->
   <div id="toast" class="toast hidden"></div>

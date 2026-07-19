@@ -1,4 +1,4 @@
-import { db, COLLECTION } from "./firebase-config.js";
+import { db, COLLECTION, NOTES_COLLECTION } from "./firebase-config.js";
 import {
   collection, doc, setDoc, deleteDoc, onSnapshot,
   query, orderBy, documentId, where
@@ -12,6 +12,18 @@ const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt
 const DAYS_FULL = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
 const SESI_COUNT = 9;
 
+// Palette for optional per-session color labels ("aktivitas unik").
+const SESI_COLORS = [
+  "#3FA34D", // green
+  "#4C8FC9", // blue
+  "#7C5CFC", // purple
+  "#D9679E", // pink
+  "#E8A672", // orange
+  "#D9534F", // red
+  "#E8C547", // yellow
+  "#6B7178", // gray
+];
+
 /* ============================================================
    STATE
    ============================================================ */
@@ -21,6 +33,8 @@ const state = {
   data: new Map(),              // dateStr -> record
   selectedDate: null,           // dateStr currently open in drawer
   unsub: null,
+  notes: new Map(),             // noteId -> {date, text, createdAt}
+  notesMinRows: 5,
 };
 
 const todayStr = fmtDate(new Date());
@@ -201,7 +215,9 @@ function buildRow(dstr, day, rec, dayTotal) {
 
   const sesiCells = Array.from({length: SESI_COUNT}, (_, i) => {
     const v = rec?.sesi?.[i];
-    return `<td>${(v !== undefined && v !== null && v !== "") ? v : '<span class="cell-empty">–</span>'}</td>`;
+    const color = rec?.sesiColors?.[i];
+    const style = color ? ` style="box-shadow: inset 0 -3px 0 ${color};"` : "";
+    return `<td${style}>${(v !== undefined && v !== null && v !== "") ? v : '<span class="cell-empty">–</span>'}</td>`;
   }).join("");
 
   tr.innerHTML = `
@@ -345,20 +361,87 @@ const drawer = document.getElementById("drawer");
 const drawerOverlay = document.getElementById("drawerOverlay");
 let drawerToggles = { if: null, insomnia: null, jog: null, tri: null };
 
+let currentSesiColors = Array(SESI_COUNT).fill(null);
+
 function buildSesiInputs() {
   const grid = document.getElementById("sesiGrid");
   grid.innerHTML = "";
   for (let i = 0; i < SESI_COUNT; i++) {
     const item = document.createElement("div");
     item.className = "sesi-item";
-    item.innerHTML = `<label>S${i+1}</label><input type="number" step="0.01" min="0" data-idx="${i}" placeholder="0.00" />`;
+    item.innerHTML = `
+      <label>S${i+1}</label>
+      <button type="button" class="color-dot" data-idx="${i}" aria-label="Beri label warna sesi ${i+1}"></button>
+      <input type="number" step="0.01" min="0" data-idx="${i}" placeholder="0.00" />
+    `;
     grid.appendChild(item);
   }
   grid.querySelectorAll("input").forEach(inp => {
     inp.addEventListener("input", updateDrawerTotal);
   });
+  grid.querySelectorAll(".color-dot").forEach(dot => {
+    dot.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openColorPopover(Number(dot.dataset.idx), dot);
+    });
+  });
 }
 buildSesiInputs();
+
+function applySesiColorDots() {
+  document.querySelectorAll("#sesiGrid .color-dot").forEach((dot, i) => {
+    const c = currentSesiColors[i];
+    dot.style.setProperty("--dot-color", c || "transparent");
+    dot.classList.toggle("has-color", !!c);
+    const input = dot.parentElement.querySelector("input");
+    input.style.setProperty("--dot-color", c || "");
+  });
+}
+
+/* ---- color-label popover (shared by all sesi swatches) ---- */
+const colorPopover = document.getElementById("colorPopover");
+let colorPopoverIdx = null;
+
+function openColorPopover(idx, anchorEl) {
+  colorPopoverIdx = idx;
+  colorPopover.innerHTML = "";
+
+  const noneBtn = document.createElement("button");
+  noneBtn.type = "button";
+  noneBtn.className = "color-swatch swatch-none";
+  noneBtn.setAttribute("aria-label", "Hapus label warna");
+  noneBtn.addEventListener("click", () => { setSesiColor(idx, null); closeColorPopover(); });
+  colorPopover.appendChild(noneBtn);
+
+  SESI_COLORS.forEach(hex => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "color-swatch" + (currentSesiColors[idx] === hex ? " active" : "");
+    btn.style.background = hex;
+    btn.setAttribute("aria-label", `Label warna ${hex}`);
+    btn.addEventListener("click", () => { setSesiColor(idx, hex); closeColorPopover(); });
+    colorPopover.appendChild(btn);
+  });
+
+  const r = anchorEl.getBoundingClientRect();
+  colorPopover.style.top = `${r.bottom + 6}px`;
+  colorPopover.style.left = `${Math.min(r.left, window.innerWidth - 130)}px`;
+  colorPopover.classList.remove("hidden");
+}
+
+function closeColorPopover() {
+  colorPopover.classList.add("hidden");
+  colorPopoverIdx = null;
+}
+
+function setSesiColor(idx, hex) {
+  currentSesiColors[idx] = hex;
+  applySesiColorDots();
+}
+
+document.addEventListener("click", (e) => {
+  if (!colorPopover.contains(e.target) && !e.target.classList.contains("color-dot")) closeColorPopover();
+});
 
 function updateDrawerTotal() {
   const inputs = document.querySelectorAll("#sesiGrid input");
@@ -453,6 +536,8 @@ function openDrawer(dstr) {
   const sesiInputs = document.querySelectorAll("#sesiGrid input");
   sesiInputs.forEach((inp, i) => { inp.value = rec.sesi?.[i] ?? ""; });
   updateDrawerTotal();
+  currentSesiColors = Array.from({length: SESI_COUNT}, (_, i) => rec.sesiColors?.[i] ?? null);
+  applySesiColorDots();
 
   // brainrot (dynamic sessions)
   buildBrainrotInputs(rec.brainrot);
@@ -490,6 +575,7 @@ function closeDrawer() {
   drawerOverlay.classList.add("hidden");
   drawer.setAttribute("aria-hidden", "true");
   state.selectedDate = null;
+  closeColorPopover();
 }
 
 document.getElementById("drawerClose").addEventListener("click", closeDrawer);
@@ -511,6 +597,7 @@ document.getElementById("drawerSave").addEventListener("click", async () => {
 
   const record = {
     sesi,
+    sesiColors: currentSesiColors,
     brainrot,
     intermittentFasting: {
       success: drawerToggles.if === "success",
@@ -556,7 +643,112 @@ document.getElementById("drawerDelete").addEventListener("click", async () => {
 });
 
 /* ============================================================
+   EXTRA NOTES
+   ============================================================ */
+function debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+function escAttr(s) {
+  return String(s ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+}
+
+function subscribeNotes() {
+  const q = query(collection(db, NOTES_COLLECTION), orderBy("createdAt"));
+  onSnapshot(q, (snap) => {
+    state.notes.clear();
+    snap.forEach(d => state.notes.set(d.id, d.data()));
+    renderNotes();
+  }, (err) => {
+    console.error(err);
+    showToast("Gagal memuat notes — cek koneksi/config Firebase", true);
+  });
+}
+
+function renderNotes() {
+  const table = document.getElementById("notesTable");
+  // Don't wipe rows while the person is actively typing in one of them —
+  // a remote update mid-edit would otherwise discard unsaved input.
+  if (table.contains(document.activeElement)) return;
+
+  table.querySelectorAll(".notes-row:not(.notes-row-head)").forEach(r => r.remove());
+
+  const saved = Array.from(state.notes.entries()); // [id, data][]
+  const placeholderCount = Math.max(0, state.notesMinRows - saved.length);
+
+  saved.forEach(([id, data]) => table.appendChild(buildNoteRow(id, data)));
+  for (let i = 0; i < placeholderCount; i++) {
+    table.appendChild(buildNoteRow(null, { date: "", text: "" }));
+  }
+}
+
+function buildNoteRow(id, data) {
+  const row = document.createElement("div");
+  row.className = "notes-row";
+  let rowId = id;
+  const createdAt = data.createdAt || null;
+
+  row.innerHTML = `
+    <input type="date" class="notes-date" value="${escAttr(data.date || "")}" />
+    <input type="text" class="notes-text" placeholder="Deskripsi singkat..." value="${escAttr(data.text || "")}" />
+    <button type="button" class="remove-btn" aria-label="Hapus baris">×</button>
+  `;
+
+  const dateInput = row.querySelector(".notes-date");
+  const textInput = row.querySelector(".notes-text");
+  const removeBtn = row.querySelector(".remove-btn");
+
+  const scheduleSave = debounce(async () => {
+    const dateVal = dateInput.value || null;
+    const textVal = textInput.value.trim();
+    if (!dateVal && !textVal) return; // nothing worth saving yet
+    try {
+      if (!rowId) {
+        const ref = doc(collection(db, NOTES_COLLECTION));
+        rowId = ref.id;
+        await setDoc(ref, { date: dateVal, text: textVal, createdAt: new Date().toISOString() });
+      } else {
+        await setDoc(doc(db, NOTES_COLLECTION, rowId),
+          { date: dateVal, text: textVal, createdAt: createdAt || new Date().toISOString() },
+          { merge: true });
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Gagal menyimpan catatan", true);
+    }
+  }, 700);
+
+  dateInput.addEventListener("input", scheduleSave);
+  textInput.addEventListener("input", scheduleSave);
+
+  removeBtn.addEventListener("click", async () => {
+    if (!rowId) { row.remove(); return; }
+    try {
+      await deleteDoc(doc(db, NOTES_COLLECTION, rowId));
+    } catch (err) {
+      console.error(err);
+      showToast("Gagal menghapus catatan", true);
+    }
+  });
+
+  return row;
+}
+
+document.getElementById("notesAddBtn").addEventListener("click", () => {
+  state.notesMinRows++;
+  renderNotes();
+});
+
+document.getElementById("notesTable").addEventListener("focusout", () => {
+  setTimeout(() => {
+    if (!document.getElementById("notesTable").contains(document.activeElement)) renderNotes();
+  }, 50);
+});
+
+/* ============================================================
    INIT
    ============================================================ */
 renderHeader();
 subscribeMonth();
+subscribeNotes();

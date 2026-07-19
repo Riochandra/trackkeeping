@@ -432,6 +432,7 @@ input { font-family: inherit; }
   width: 100%;
   background: var(--surface-alt);
   border: 1px solid var(--border);
+  border-bottom: 3px solid var(--dot-color, var(--border));
   border-radius: var(--radius-s);
   color: var(--text);
   padding: 16px 8px 6px;
@@ -439,7 +440,22 @@ input { font-family: inherit; }
   text-align: right;
   font-family: var(--font-mono);
 }
-.sesi-item input:focus { outline: none; border-color: var(--accent-dim); }
+.sesi-item input:focus { outline: none; border-color: var(--accent-dim); border-bottom-color: var(--dot-color, var(--accent-dim)); }
+
+.color-dot {
+  position: absolute;
+  top: 5px; right: 5px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--text-faint);
+  background: var(--dot-color, transparent);
+  cursor: pointer;
+  z-index: 2;
+  padding: 0;
+  transition: transform var(--transition);
+}
+.color-dot:hover { transform: scale(1.2); }
+.color-dot.has-color { border-style: solid; border-color: var(--dot-color); }
 
 .sesi-item .remove-btn {
   position: absolute;
@@ -573,6 +589,112 @@ input { font-family: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+
+/* ==========================================================================
+   COLOR-LABEL POPOVER (sesi swatches)
+   ========================================================================== */
+.color-popover {
+  position: fixed;
+  z-index: 60;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  padding: 8px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+  display: grid;
+  grid-template-columns: repeat(4, 24px);
+  gap: 6px;
+}
+.color-swatch {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: transform var(--transition), border-color var(--transition);
+}
+.color-swatch:hover { transform: scale(1.1); }
+.color-swatch.active { border-color: var(--text); }
+.color-swatch.swatch-none {
+  background: var(--surface-alt);
+  border: 1.5px dashed var(--text-faint);
+  position: relative;
+}
+.color-swatch.swatch-none::after {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 14px; height: 1.5px;
+  background: var(--text-faint);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+/* ==========================================================================
+   EXTRA NOTES
+   ========================================================================== */
+.notes-wrap {
+  margin: 0 20px 40px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  padding: 16px 18px 18px;
+}
+.notes-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.notes-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0;
+}
+.notes-table { display: flex; flex-direction: column; gap: 8px; }
+.notes-row {
+  display: grid;
+  grid-template-columns: 152px 1fr 32px;
+  gap: 10px;
+  align-items: center;
+}
+.notes-row-head {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 0 2px;
+}
+.notes-row input[type="date"],
+.notes-row input[type="text"] {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 13px;
+  width: 100%;
+}
+.notes-row input[type="date"] { font-family: var(--font-mono); font-size: 12.5px; color-scheme: dark; }
+html[data-theme="light"] .notes-row input[type="date"] { color-scheme: light; }
+.notes-row input:focus { outline: none; border-color: var(--accent-dim); }
+.notes-row .remove-btn {
+  width: 28px; height: 28px;
+  border-radius: var(--radius-s);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: color var(--transition), border-color var(--transition);
+}
+.notes-row .remove-btn:hover { color: var(--c-red); border-color: var(--c-red); }
+
+@media (max-width: 760px) {
+  .notes-wrap { margin: 0 14px 30px; }
+  .notes-row { grid-template-columns: 128px 1fr 30px; gap: 6px; }
 }
 
 /* keyboard focus visibility */
