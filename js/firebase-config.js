@@ -4,11 +4,7 @@
 // Project Settings → General → "Your apps" → SDK setup and configuration.
 // ============================================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-import {
-  initializeFirestore,
-  persistentLocalCache,
-  persistentSingleTabManager,
-} from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCiWn9bQ0nlMNHM8_4JOr_7_ACIb_kTfM8",
@@ -21,19 +17,12 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-// Firestore with:
-// - persistentLocalCache (IndexedDB): repeat visits render instantly from
-//   local cache while the fresh snapshot streams in behind it, instead of
-//   showing a blank grid until the network round-trip finishes.
-// - experimentalAutoDetectLongPolling: some networks/proxies (common on
-//   mobile carriers or restrictive Wi-Fi) stall or slow-handshake Firestore's
-//   default WebChannel transport. Auto-detection falls back to long-polling
-//   only when needed, which removes a big chunk of the first-load stall.
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({ tabManager: persistentSingleTabManager({}) }),
-  experimentalAutoDetectLongPolling: true,
-});
+// Firestore with offline cache disabled by default for simplicity & speed;
+// switch to initializeFirestore with persistence if you want offline support.
+export const db = getFirestore(app);
 
 // Name of the Firestore collection used for daily records.
 export const COLLECTION = "trackkeeping_days";
+
+// Name of the Firestore collection used for the "Extra Notes" log.
 export const NOTES_COLLECTION = "trackkeeping_notes";

@@ -83,6 +83,7 @@ function showToast(msg, isError = false) {
 function subscribeMonth() {
   if (state.unsub) state.unsub();
   state.data.clear();
+  renderGrid(); // instant skeleton (all "–") while the real data streams in
   setLoading(true);
 
   const y = state.year, m = state.month;
@@ -118,6 +119,7 @@ function setLoading(on) {
 function renderHeader() {
   document.getElementById("monthText").textContent = MONTHS[state.month];
   document.getElementById("yearText").textContent = state.year;
+  document.getElementById("notesMonthLabel").textContent = `· ${MONTHS[state.month]} ${state.year}`;
 }
 
 /* ============================================================
@@ -282,6 +284,13 @@ function tagIfExists(kind, rec) {
 /* ============================================================
    NAVIGATION
    ============================================================ */
+function onMonthChanged() {
+  renderHeader();
+  subscribeMonth();
+  state.notesMinRows = 5; // fresh baseline of blank rows per month view
+  renderNotes();
+}
+
 function changeMonth(delta) {
   let m = state.month + delta;
   let y = state.year;
@@ -289,16 +298,14 @@ function changeMonth(delta) {
   if (m > 11) { m = 0; y++; }
   state.month = m;
   state.year = y;
-  renderHeader();
-  subscribeMonth();
+  onMonthChanged();
 }
 
 function goToday() {
   const now = new Date();
   state.year = now.getFullYear();
   state.month = now.getMonth();
-  renderHeader();
-  subscribeMonth();
+  onMonthChanged();
 }
 
 document.getElementById("prevMonth").addEventListener("click", () => changeMonth(-1));
@@ -321,8 +328,7 @@ function renderPicker() {
     btn.addEventListener("click", () => {
       state.year = pickerYear;
       state.month = i;
-      renderHeader();
-      subscribeMonth();
+      onMonthChanged();
       closePicker();
     });
     wrap.appendChild(btn);
@@ -686,27 +692,20 @@ document.getElementById("drawerSave").addEventListener("click", async () => {
     updatedAt: new Date().toISOString(),
   };
 
-  // Optimistic UI: the old code awaited setDoc() before giving ANY feedback,
-  // so the whole 1-2s round trip (Jakarta <-> Firestore server) sat between
-  // the click and the toast/drawer closing. Firestore already applies local
-  // writes to its cache instantly and reconciles via onSnapshot in the
-  // background — so update local state + UI right away, and only revert if
-  // the write actually fails (offline, blocked by rules, etc).
-  const dateId = state.selectedDate;
-  const prevRec = state.data.get(dateId);
-
-  state.data.set(dateId, record);
+  // Optimistic UI: reflect the change immediately, don't block on the
+  // network round-trip. The live onSnapshot listener will reconcile with
+  // the server's copy right after (or roll back the toast on failure).
+  const targetDate = state.selectedDate;
+  state.data.set(targetDate, record);
   renderGrid();
-  showToast("Tersimpan");
   closeDrawer();
+  showToast("Tersimpan");
 
   try {
-    await setDoc(doc(db, COLLECTION, dateId), record, { merge: false });
+    await setDoc(doc(db, COLLECTION, targetDate), record, { merge: false });
   } catch (err) {
     console.error(err);
-    if (prevRec) state.data.set(dateId, prevRec); else state.data.delete(dateId);
-    renderGrid();
-    showToast("Gagal menyimpan — cek koneksi/config Firebase", true);
+    showToast("Gagal menyimpan ke server — cek koneksi", true);
   }
 });
 
@@ -714,20 +713,16 @@ document.getElementById("drawerDelete").addEventListener("click", async () => {
   if (!state.selectedDate) return;
   if (!confirm("Hapus semua data untuk tanggal ini?")) return;
 
-  const dateId = state.selectedDate;
-  const prevRec = state.data.get(dateId);
-
-  state.data.delete(dateId);
+  const targetDate = state.selectedDate;
+  state.data.delete(targetDate);
   renderGrid();
-  showToast("Data dihapus");
   closeDrawer();
+  showToast("Data dihapus");
 
   try {
-    await deleteDoc(doc(db, COLLECTION, dateId));
+    await deleteDoc(doc(db, COLLECTION, targetDate));
   } catch (err) {
     console.error(err);
-    if (prevRec) state.data.set(dateId, prevRec);
-    renderGrid();
     showToast("Gagal menghapus", true);
   }
 });
@@ -756,6 +751,14 @@ function subscribeNotes() {
   });
 }
 
+// Notes for the month currently shown in the main grid. Undated notes
+// (no Tgl picked yet) always stay visible so nothing gets lost from view.
+function notesForCurrentMonth() {
+  const prefix = `${state.year}-${pad2(state.month + 1)}`; // "YYYY-MM"
+  return Array.from(state.notes.entries())
+    .filter(([, data]) => !data.date || data.date.startsWith(prefix));
+}
+
 function renderNotes() {
   const table = document.getElementById("notesTable");
   // Don't wipe rows while the person is actively typing in one of them —
@@ -764,7 +767,7 @@ function renderNotes() {
 
   table.querySelectorAll(".notes-row:not(.notes-row-head)").forEach(r => r.remove());
 
-  const saved = Array.from(state.notes.entries()); // [id, data][]
+  const saved = notesForCurrentMonth();
   const placeholderCount = Math.max(0, state.notesMinRows - saved.length);
 
   saved.forEach(([id, data]) => table.appendChild(buildNoteRow(id, data)));
@@ -826,7 +829,8 @@ function buildNoteRow(id, data) {
 }
 
 document.getElementById("notesAddBtn").addEventListener("click", () => {
-  state.notesMinRows++;
+  const savedCount = notesForCurrentMonth().length;
+  state.notesMinRows = Math.max(state.notesMinRows, savedCount) + 1;
   renderNotes();
 });
 
@@ -841,4 +845,5 @@ document.getElementById("notesTable").addEventListener("focusout", () => {
    ============================================================ */
 renderHeader();
 subscribeMonth();
+renderNotes();   // instant 5 blank rows while notes stream in
 subscribeNotes();

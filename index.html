@@ -5,34 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>TRACKKEEPING</title>
 <meta name="description" content="Daily grinding & habit log" />
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B0D10'/%3E%3Cpath d='M16 5 L27 16 L16 27 L5 16 Z' fill='%23C9A84C'/%3E%3C/svg%3E" />
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="assets/favicon.ico" sizes="32x32" />
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
-
-<!-- App CSS first so the dark theme paints immediately (no white flash) -->
-<link rel="stylesheet" href="css/style.css" />
-
-<!-- Warm up every other origin we need in parallel with HTML parsing,
-     instead of the browser discovering them one-by-one later -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
-
-<!-- Fonts: load async (display=swap already set) so they never block first paint -->
-<link rel="preload" as="style"
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
-      onload="this.onload=null;this.rel='stylesheet'">
-<noscript>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
-</noscript>
-
-<!-- Module preloads: fetch app.js/firebase-config.js and their nested
-     Firebase SDK imports in parallel, instead of the sequential
-     fetch -> parse -> discover -> fetch waterfall this used to be -->
-<link rel="modulepreload" href="js/firebase-config.js">
-<link rel="modulepreload" href="js/app.js">
-<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js" crossorigin>
-<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
 
@@ -130,7 +109,7 @@
     <!-- ============ EXTRA NOTES ============ -->
     <section class="notes-wrap">
       <div class="notes-head">
-        <h2 class="notes-title">Extra Notes</h2>
+        <h2 class="notes-title">Extra Notes <span class="notes-month" id="notesMonthLabel"></span></h2>
         <button type="button" id="notesAddBtn" class="btn-add">+ Tambah baris</button>
       </div>
       <div class="notes-table" id="notesTable">
