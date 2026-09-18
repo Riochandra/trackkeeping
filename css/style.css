@@ -292,7 +292,7 @@ input { font-family: inherit; }
 .grid-table tbody tr.is-today .sticky-col2 { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
 
 .col-sesi { min-width: 46px; }
-.col-wide { min-width: 170px; text-align: left !important; }
+.col-wide { min-width: 130px; text-align: left !important; }
 .col-narrow { min-width: 70px; }
 
 .cell-empty { color: var(--text-faint); }
