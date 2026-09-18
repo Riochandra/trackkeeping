@@ -293,6 +293,7 @@ input { font-family: inherit; }
 
 .col-sesi { min-width: 46px; }
 .col-wide { min-width: 130px; text-align: left !important; }
+.col-wide-a { min-width: 170px; text-align: left !important; }
 .col-narrow { min-width: 70px; }
 
 .cell-empty { color: var(--text-faint); }
